@@ -1,14 +1,14 @@
-// Package api 提供WordZero的HTTP服务请求处理器
+// Package api 提供WordZero的HTTP服务请求处理器（基于 gin 框架）
 package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/zerx-lab/wordZero/internal/generator"
 	"github.com/zerx-lab/wordZero/internal/s3"
 	"github.com/zerx-lab/wordZero/pkg/document"
@@ -40,23 +40,15 @@ func newHandler(cfg *Config) (*handler, error) {
 
 // handleGenerateFromContent 处理通过内容生成文档的请求
 // POST /api/v1/documents/content
-func (h *handler) handleGenerateFromContent(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "方法不允许")
-		return
-	}
-
-	// 解析请求体
+func (h *handler) handleGenerateFromContent(c *gin.Context) {
 	var req GenerateFromContentRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, fmt.Sprintf("请求体解析失败: %v", err))
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("请求体解析失败: %v", err)})
 		return
 	}
-	defer r.Body.Close()
 
-	// 验证请求
 	if len(req.Content) == 0 {
-		writeError(w, http.StatusBadRequest, "内容列表不能为空")
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "内容列表不能为空"})
 		return
 	}
 
@@ -66,7 +58,7 @@ func (h *handler) handleGenerateFromContent(w http.ResponseWriter, r *http.Reque
 	// 添加内容
 	for _, item := range req.Content {
 		if err := addDocumentContent(doc, item); err != nil {
-			writeError(w, http.StatusBadRequest, fmt.Sprintf("添加内容失败: %v", err))
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("添加内容失败: %v", err)})
 			return
 		}
 	}
@@ -74,7 +66,7 @@ func (h *handler) handleGenerateFromContent(w http.ResponseWriter, r *http.Reque
 	// 将文档转换为字节
 	docBytes, err := doc.ToBytes()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, fmt.Sprintf("生成文档失败: %v", err))
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: fmt.Sprintf("生成文档失败: %v", err)})
 		return
 	}
 
@@ -84,14 +76,14 @@ func (h *handler) handleGenerateFromContent(w http.ResponseWriter, r *http.Reque
 		filename = "document.docx"
 	}
 	key := s3.GenerateObjectKey(filename)
-	url, err := h.s3Uploader.Upload(r.Context(), key, docBytes,
+	url, err := h.s3Uploader.Upload(c.Request.Context(), key, docBytes,
 		"application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, fmt.Sprintf("上传文档失败: %v", err))
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: fmt.Sprintf("上传文档失败: %v", err)})
 		return
 	}
 
-	writeJSON(w, http.StatusOK, GenerateResponse{
+	c.JSON(http.StatusOK, GenerateResponse{
 		URL:      url,
 		Filename: filename,
 		Size:     int64(len(docBytes)),
@@ -100,30 +92,22 @@ func (h *handler) handleGenerateFromContent(w http.ResponseWriter, r *http.Reque
 
 // handleGenerateFromTemplate 处理通过模板生成文档的请求
 // POST /api/v1/documents/template
-func (h *handler) handleGenerateFromTemplate(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "方法不允许")
-		return
-	}
-
-	// 解析请求体
+func (h *handler) handleGenerateFromTemplate(c *gin.Context) {
 	var req GenerateFromTemplateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, fmt.Sprintf("请求体解析失败: %v", err))
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("请求体解析失败: %v", err)})
 		return
 	}
-	defer r.Body.Close()
 
-	// 验证请求
 	if req.TemplateURL == "" {
-		writeError(w, http.StatusBadRequest, "模板URL不能为空")
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "模板URL不能为空"})
 		return
 	}
 
 	// 下载模板文件
-	templateBytes, err := h.downloadTemplate(r.Context(), req.TemplateURL)
+	templateBytes, err := h.downloadTemplate(c.Request.Context(), req.TemplateURL)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, fmt.Sprintf("下载模板失败: %v", err))
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("下载模板失败: %v", err)})
 		return
 	}
 
@@ -131,14 +115,14 @@ func (h *handler) handleGenerateFromTemplate(w http.ResponseWriter, r *http.Requ
 	tplData := generator.BuildTemplateData(req.Variables)
 	doc, err := generator.RenderTemplateFromBytes(templateBytes, tplData)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, fmt.Sprintf("渲染模板失败: %v", err))
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: fmt.Sprintf("渲染模板失败: %v", err)})
 		return
 	}
 
 	// 将文档转换为字节
 	docBytes, err := doc.ToBytes()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, fmt.Sprintf("生成文档失败: %v", err))
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: fmt.Sprintf("生成文档失败: %v", err)})
 		return
 	}
 
@@ -148,14 +132,14 @@ func (h *handler) handleGenerateFromTemplate(w http.ResponseWriter, r *http.Requ
 		filename = "document.docx"
 	}
 	key := s3.GenerateObjectKey(filename)
-	url, err := h.s3Uploader.Upload(r.Context(), key, docBytes,
+	url, err := h.s3Uploader.Upload(c.Request.Context(), key, docBytes,
 		"application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, fmt.Sprintf("上传文档失败: %v", err))
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: fmt.Sprintf("上传文档失败: %v", err)})
 		return
 	}
 
-	writeJSON(w, http.StatusOK, GenerateResponse{
+	c.JSON(http.StatusOK, GenerateResponse{
 		URL:      url,
 		Filename: filename,
 		Size:     int64(len(docBytes)),
