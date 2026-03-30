@@ -1,8 +1,8 @@
 module benchmark
 
-go 1.22
+go 1.23
 
-toolchain go1.24.10
+toolchain go1.24.13
 
 replace github.com/zerx-lab/wordZero => ../../
 
