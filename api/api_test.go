@@ -8,9 +8,15 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/zerx-lab/wordZero/api"
 	"github.com/zerx-lab/wordZero/internal/s3"
 )
+
+func init() {
+	// 测试时使用 TestMode，禁用 gin 的调试输出
+	gin.SetMode(gin.TestMode)
+}
 
 // newTestConfig 创建测试用的服务器配置（使用无效的S3配置）
 func newTestConfig() *api.Config {
@@ -69,26 +75,18 @@ func TestDefaultConfig(t *testing.T) {
 	}
 }
 
-// TestHealthEndpoint 测试健康检查端点（通过测试服务器）
+// TestHealthEndpoint 测试健康检查端点（通过 gin 测试路由）
 func TestHealthEndpoint(t *testing.T) {
-	// 使用httptest直接测试处理函数
-	mux := http.NewServeMux()
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			http.Error(w, "方法不允许", http.StatusMethodNotAllowed)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		if _, err := w.Write([]byte(`{"status":"ok"}`)); err != nil {
-			t.Errorf("写入响应失败: %v", err)
-		}
+	// 创建 gin 测试引擎
+	engine := gin.New()
+	engine.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
 	// GET请求应该成功
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	rr := httptest.NewRecorder()
-	mux.ServeHTTP(rr, req)
+	engine.ServeHTTP(rr, req)
 	if rr.Code != http.StatusOK {
 		t.Errorf("期望状态码 %d，实际 %d", http.StatusOK, rr.Code)
 	}

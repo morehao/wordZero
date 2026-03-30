@@ -1,18 +1,23 @@
-// Package s3 提供S3协议兼容的对象存储上传功能
+// Package s3 提供S3协议兼容的对象存储上传功能，底层使用 github.com/ygpkg/yg-go/storage 实现
 package s3
 
 import (
 	"bytes"
 	"context"
 	"fmt"
+	"mime"
 	"path/filepath"
+	"sync"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
+	ygconfig "github.com/ygpkg/yg-go/config"
+	ygstorage "github.com/ygpkg/yg-go/storage"
 )
+
+func init() {
+	// 确保 .docx MIME 类型在所有操作系统上正确注册
+	_ = mime.AddExtensionType(".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+}
 
 // Config S3上传配置
 type Config struct {
@@ -34,13 +39,15 @@ type Config struct {
 	PublicBaseURL string `json:"public_base_url" yaml:"public_base_url"`
 }
 
-// Uploader S3上传器
+// Uploader S3上传器，使用 github.com/ygpkg/yg-go/storage 实现上传操作
 type Uploader struct {
-	client *s3.Client
-	cfg    *Config
+	cfg   *Config
+	once  sync.Once
+	fs    *ygstorage.S3Fs
+	fsErr error
 }
 
-// NewUploader 创建新的S3上传器
+// NewUploader 创建新的S3上传器（延迟初始化底层存储连接）
 func NewUploader(cfg *Config) (*Uploader, error) {
 	if cfg == nil {
 		return nil, fmt.Errorf("s3配置不能为空")
@@ -52,87 +59,59 @@ func NewUploader(cfg *Config) (*Uploader, error) {
 		cfg.Region = "us-east-1"
 	}
 
-	// 构建AWS配置选项
-	opts := []func(*config.LoadOptions) error{
-		config.WithRegion(cfg.Region),
-	}
+	return &Uploader{cfg: cfg}, nil
+}
 
-	// 配置静态凭证（如果提供）
-	if cfg.AccessKeyID != "" && cfg.SecretAccessKey != "" {
-		opts = append(opts, config.WithCredentialsProvider(
-			credentials.NewStaticCredentialsProvider(cfg.AccessKeyID, cfg.SecretAccessKey, ""),
-		))
-	}
-
-	// 加载AWS配置
-	awsCfg, err := config.LoadDefaultConfig(context.Background(), opts...)
-	if err != nil {
-		return nil, fmt.Errorf("加载AWS配置失败: %w", err)
-	}
-
-	// 创建S3客户端选项
-	s3Opts := []func(*s3.Options){
-		func(o *s3.Options) {
-			o.UsePathStyle = cfg.UsePathStyle
-		},
-	}
-
-	// 配置自定义端点（用于MinIO、阿里云OSS等S3兼容存储）
-	if cfg.Endpoint != "" {
-		s3Opts = append(s3Opts, func(o *s3.Options) {
-			o.BaseEndpoint = aws.String(cfg.Endpoint)
-		})
-	}
-
-	client := s3.NewFromConfig(awsCfg, s3Opts...)
-
-	return &Uploader{
-		client: client,
-		cfg:    cfg,
-	}, nil
+// init 延迟初始化底层 yg-go S3Fs 存储器（首次上传时建立连接）
+func (u *Uploader) init() error {
+	u.once.Do(func() {
+		s3cfg := ygconfig.S3StorageConfig{
+			EndPoint:        u.cfg.Endpoint,
+			Region:          u.cfg.Region,
+			Bucket:          u.cfg.Bucket,
+			AccessKeyID:     u.cfg.AccessKeyID,
+			SecretAccessKey: u.cfg.SecretAccessKey,
+			UsePathStyle:    u.cfg.UsePathStyle,
+		}
+		opt := ygconfig.StorageOption{}
+		u.fs, u.fsErr = ygstorage.NewS3Fs(s3cfg, opt)
+	})
+	return u.fsErr
 }
 
 // Upload 上传文件到S3存储，返回对象的访问URL
 func (u *Uploader) Upload(ctx context.Context, key string, data []byte, contentType string) (string, error) {
+	// 延迟初始化底层存储连接
+	if err := u.init(); err != nil {
+		return "", fmt.Errorf("初始化S3连接失败: %w", err)
+	}
+
 	// 构建完整的对象键
 	fullKey := key
 	if u.cfg.KeyPrefix != "" {
 		fullKey = u.cfg.KeyPrefix + "/" + key
 	}
 
-	// 上传对象
-	_, err := u.client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:      aws.String(u.cfg.Bucket),
-		Key:         aws.String(fullKey),
-		Body:        bytes.NewReader(data),
-		ContentType: aws.String(contentType),
-	})
-	if err != nil {
+	// 获取文件扩展名（用于设置 MIME 类型）
+	ext := filepath.Ext(fullKey)
+
+	// 构建 FileInfo
+	fi := &ygstorage.FileInfo{
+		StoragePath: fullKey,
+		FileExt:     ext,
+	}
+
+	// 使用 yg-go storage 上传文件
+	if err := u.fs.Save(ctx, fi, bytes.NewReader(data)); err != nil {
 		return "", fmt.Errorf("上传到S3失败: %w", err)
 	}
 
-	// 生成访问URL
-	url := u.buildURL(fullKey)
-	return url, nil
-}
-
-// buildURL 构建对象访问URL
-func (u *Uploader) buildURL(key string) string {
+	// 如果配置了 PublicBaseURL，则覆盖生成的 URL
 	if u.cfg.PublicBaseURL != "" {
-		return fmt.Sprintf("%s/%s", trimTrailingSlash(u.cfg.PublicBaseURL), key)
+		return fmt.Sprintf("%s/%s", trimTrailingSlash(u.cfg.PublicBaseURL), fullKey), nil
 	}
 
-	// 使用自定义端点
-	if u.cfg.Endpoint != "" {
-		endpoint := trimTrailingSlash(u.cfg.Endpoint)
-		if u.cfg.UsePathStyle {
-			return fmt.Sprintf("%s/%s/%s", endpoint, u.cfg.Bucket, key)
-		}
-		return fmt.Sprintf("%s/%s", endpoint, key)
-	}
-
-	// 默认AWS S3 URL格式
-	return fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", u.cfg.Bucket, u.cfg.Region, key)
+	return fi.PublicURL, nil
 }
 
 // trimTrailingSlash 去除字符串末尾的斜杠
