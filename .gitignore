@@ -35,9 +35,6 @@ unzip_tool.exe
 go.work
 go.work.sum
 
-# 依赖和vendor
-vendor/
-
 # 临时文件
 *.tmp
 *.temp

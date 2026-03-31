@@ -1,6 +1,6 @@
 module floating_images_demo
 
-go 1.23
+go 1.23.0
 
 replace github.com/zerx-lab/wordZero => ../..
 
