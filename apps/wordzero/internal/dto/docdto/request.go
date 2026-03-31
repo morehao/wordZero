@@ -16,12 +16,14 @@ type GenerateFromContentEmbedRequest struct {
 }
 
 type ContentItemRequest struct {
-	Type         string `json:"type"`
-	Text         string `json:"text,omitempty"`
-	HeadingLevel int    `json:"heading_level,omitempty"`
-	Bold         bool   `json:"bold,omitempty"`
-	Italic       bool   `json:"italic,omitempty"`
-	Alignment    string `json:"alignment,omitempty"`
+	Type         string     `json:"type"`
+	Text         string     `json:"text,omitempty"`
+	HeadingLevel int        `json:"heading_level,omitempty"`
+	Bold         bool       `json:"bold,omitempty"`
+	Italic       bool       `json:"italic,omitempty"`
+	Alignment    string     `json:"alignment,omitempty"`
+	TableData    [][]string `json:"table_data,omitempty"`
+	TableWidth   int        `json:"table_width,omitempty"`
 }
 
 func (opt *GenerateFromContentRequest) Validity(resp *GenerateFromContentResponse) {

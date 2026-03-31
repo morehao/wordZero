@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/ygpkg/yg-go/logs"
 	"github.com/zerx-lab/wordZero/apps/wordzero/internal/config"
-	"github.com/zerx-lab/wordZero/apps/wordzero/services/svcdoc"
 	"github.com/zerx-lab/wordZero/pkg/s3"
 )
 
@@ -19,7 +18,7 @@ func initS3Uploader(cfg *config.WordZeroConfig) error {
 		logs.Errorf("[main] init S3 uploader failed: %s", err)
 		return err
 	}
-	svcdoc.SetGlobalUploader(uploader)
+	s3.SetGlobalUploader(uploader)
 	logs.Infof("[main] S3 uploader initialized, bucket: %s", s3Cfg.Bucket)
 	return nil
 }

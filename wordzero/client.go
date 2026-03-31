@@ -1,5 +1,5 @@
-// Package sdk 提供WordZero的SDK客户端，用于以编程方式生成Word文档并上传至S3存储
-package sdk
+// Package wordzero 提供WordZero的SDK客户端，用于以编程方式生成Word文档并上传至S3存储
+package wordzero
 
 import (
 	"context"

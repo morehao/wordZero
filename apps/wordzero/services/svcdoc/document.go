@@ -14,23 +14,6 @@ import (
 	"github.com/zerx-lab/wordZero/pkg/s3"
 )
 
-type documentService struct {
-	s3Uploader *s3.Uploader
-	httpClient *http.Client
-}
-
-func NewDocumentService(s3Cfg *s3.Config) (*documentService, error) {
-	uploader, err := s3.NewUploader(s3Cfg)
-	if err != nil {
-		return nil, fmt.Errorf("创建S3上传器失败: %w", err)
-	}
-
-	return &documentService{
-		s3Uploader: uploader,
-		httpClient: &http.Client{Timeout: 30 * time.Second},
-	}, nil
-}
-
 func GenerateFromContent(ctx *gin.Context, req *docdto.GenerateFromContentRequest) (res *docdto.GenerateFromContentResponse, err error) {
 	res = &docdto.GenerateFromContentResponse{}
 
@@ -53,7 +36,7 @@ func GenerateFromContent(ctx *gin.Context, req *docdto.GenerateFromContentReques
 	}
 
 	key := s3.GenerateObjectKey(filename)
-	url, err := s3UploaderGlobal.Upload(ctx.Request.Context(), key, docBytes,
+	url, err := s3.GlobalUploader.Upload(ctx.Request.Context(), key, docBytes,
 		"application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 	if err != nil {
 		return nil, fmt.Errorf("上传文档失败: %w", err)
@@ -90,7 +73,7 @@ func GenerateFromTemplate(ctx *gin.Context, req *docdto.GenerateFromTemplateRequ
 	}
 
 	key := s3.GenerateObjectKey(filename)
-	url, err := s3UploaderGlobal.Upload(ctx.Request.Context(), key, docBytes,
+	url, err := s3.GlobalUploader.Upload(ctx.Request.Context(), key, docBytes,
 		"application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 	if err != nil {
 		return nil, fmt.Errorf("上传文档失败: %w", err)
@@ -100,12 +83,6 @@ func GenerateFromTemplate(ctx *gin.Context, req *docdto.GenerateFromTemplateRequ
 	res.Response.Filename = filename
 	res.Response.Size = int64(len(docBytes))
 	return res, nil
-}
-
-var s3UploaderGlobal *s3.Uploader
-
-func SetGlobalUploader(uploader *s3.Uploader) {
-	s3UploaderGlobal = uploader
 }
 
 func downloadTemplate(ctx context.Context, templateURL string) ([]byte, error) {
@@ -154,6 +131,35 @@ func addDocumentContent(doc *document.Document, item docdto.ContentItemRequest) 
 		}
 	case "page_break":
 		doc.AddPageBreak()
+	case "table":
+		data := item.TableData
+		if len(data) == 0 {
+			return fmt.Errorf("表格数据不能为空")
+		}
+
+		cols := 0
+		for _, row := range data {
+			if len(row) > cols {
+				cols = len(row)
+			}
+		}
+		if cols == 0 {
+			return fmt.Errorf("表格列数不能为0")
+		}
+
+		width := item.TableWidth
+		if width <= 0 {
+			width = 9000
+		}
+
+		config := &document.TableConfig{
+			Rows:  len(data),
+			Cols:  cols,
+			Width: width,
+			Data:  data,
+		}
+		_, err := doc.AddTable(config)
+		return err
 	default:
 		return fmt.Errorf("未知内容类型: %s", item.Type)
 	}

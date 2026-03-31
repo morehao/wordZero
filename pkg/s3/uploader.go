@@ -47,6 +47,12 @@ type Uploader struct {
 	fsErr error
 }
 
+var GlobalUploader *Uploader
+
+func SetGlobalUploader(uploader *Uploader) {
+	GlobalUploader = uploader
+}
+
 // NewUploader 创建新的S3上传器（延迟初始化底层存储连接）
 func NewUploader(cfg *Config) (*Uploader, error) {
 	if cfg == nil {

@@ -1,5 +1,5 @@
-// Package sdk 提供WordZero的SDK客户端模型定义
-package sdk
+// Package wordzero 提供WordZero的SDK客户端模型定义
+package wordzero
 
 import "fmt"
 
