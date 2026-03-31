@@ -11,11 +11,11 @@ import (
 	ygconfig "github.com/ygpkg/yg-go/config"
 	"github.com/zerx-lab/wordZero/pkg/document"
 	"github.com/zerx-lab/wordZero/pkg/generator"
-	"github.com/zerx-lab/wordZero/pkg/s3"
+	"github.com/zerx-lab/wordZero/pkg/s3storage"
 )
 
 type Client struct {
-	s3Uploader *s3.Uploader
+	s3Uploader *s3storage.Uploader
 	httpClient *http.Client
 }
 
@@ -29,7 +29,7 @@ func NewClient(cfg *Config) (*Client, error) {
 		return nil, fmt.Errorf("SDK配置不能为空")
 	}
 
-	uploader, err := s3.NewUploader(cfg.S3Config)
+	uploader, err := s3storage.NewUploader(cfg.S3Config)
 	if err != nil {
 		return nil, fmt.Errorf("创建S3上传器失败: %w", err)
 	}
@@ -75,7 +75,7 @@ func (c *Client) GenerateFromContent(ctx context.Context, req *ContentRequest) (
 	if filename == "" {
 		filename = "document.docx"
 	}
-	key := s3.GenerateObjectKey(filename)
+	key := s3storage.GenerateObjectKey(filename)
 	url, err := c.s3Uploader.Upload(ctx, key, docBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 	if err != nil {
 		return nil, fmt.Errorf("上传文档失败: %w", err)
@@ -119,7 +119,7 @@ func (c *Client) GenerateFromTemplate(ctx context.Context, req *TemplateRequest)
 	if filename == "" {
 		filename = "document.docx"
 	}
-	key := s3.GenerateObjectKey(filename)
+	key := s3storage.GenerateObjectKey(filename)
 	url, err := c.s3Uploader.Upload(ctx, key, docBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 	if err != nil {
 		return nil, fmt.Errorf("上传文档失败: %w", err)

@@ -127,6 +127,13 @@ Content-Type: application/json
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
+| `cmd` | string | 是 | 命令标识：`wordzero.GenerateFromContent` |
+| `request` | object | 是 | 请求内容 |
+
+**`request` 字段：**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
 | `filename` | string | 否 | 输出文件名，默认 `document.docx` |
 | `content` | array | 是 | 文档内容列表 |
 
@@ -147,59 +154,62 @@ Content-Type: application/json
 
 ```json
 {
-  "filename": "report.docx",
-  "content": [
-    {
-      "type": "heading",
-      "text": "年度报告",
-      "heading_level": 1
-    },
-    {
-      "type": "paragraph",
-      "text": "本报告总结了本年度的业务情况。",
-      "bold": false,
-      "alignment": "left"
-    },
-    {
-      "type": "heading",
-      "text": "第一章：业务概述",
-      "heading_level": 2
-    },
-    {
-      "type": "paragraph",
-      "text": "本章节介绍业务概况。",
-      "italic": true
-    },
-    {
-      "type": "page_break"
-    },
-    {
-      "type": "paragraph",
-      "text": "（续页内容）",
-      "alignment": "center"
-    },
-    {
-      "type": "heading",
-      "text": "销售数据统计",
-      "heading_level": 2
-    },
-    {
-      "type": "table",
-      "table_width": 9000,
-      "table_data": [
-        ["产品名称", "销量（件）", "销售额（元）"],
-        ["iPhone 15", "1250", "8750000"],
-        ["MacBook Pro", "380", "5320000"],
-        ["iPad Air", "620", "2480000"],
-        ["AirPods Pro", "2100", "4200000"]
-      ]
-    },
-    {
-      "type": "paragraph",
-      "text": "结论：iPhone 15 销量最高，AirPods Pro 销量增长最快。",
-      "bold": true
-    }
-  ]
+  "cmd": "wordzero.GenerateFromContent",
+  "request": {
+    "filename": "report.docx",
+    "content": [
+      {
+        "type": "heading",
+        "text": "年度报告",
+        "heading_level": 1
+      },
+      {
+        "type": "paragraph",
+        "text": "本报告总结了本年度的业务情况。",
+        "bold": false,
+        "alignment": "left"
+      },
+      {
+        "type": "heading",
+        "text": "第一章：业务概述",
+        "heading_level": 2
+      },
+      {
+        "type": "paragraph",
+        "text": "本章节介绍业务概况。",
+        "italic": true
+      },
+      {
+        "type": "page_break"
+      },
+      {
+        "type": "paragraph",
+        "text": "（续页内容）",
+        "alignment": "center"
+      },
+      {
+        "type": "heading",
+        "text": "销售数据统计",
+        "heading_level": 2
+      },
+      {
+        "type": "table",
+        "table_width": 9000,
+        "table_data": [
+          ["产品名称", "销量（件）", "销售额（元）"],
+          ["iPhone 15", "1250", "8750000"],
+          ["MacBook Pro", "380", "5320000"],
+          ["iPad Air", "620", "2480000"],
+          ["AirPods Pro", "2100", "4200000"]
+        ]
+      },
+      {
+        "type": "paragraph",
+        "text": "结论：iPhone 15 销量最高，AirPods Pro 销量增长最快。",
+        "bold": true
+      }
+    ]
+  }
 }
 ```
 
@@ -207,9 +217,11 @@ Content-Type: application/json
 
 ```json
 {
-  "url": "http://localhost:9000/wordzero/documents/2024-01-01/1704067200000_report.docx",
-  "filename": "report.docx",
-  "size": 5432
+  "response": {
+    "url": "http://localhost:9000/wordzero/documents/2024-01-01/1704067200000_report.docx",
+    "filename": "report.docx",
+    "size": 5432
+  }
 }
 ```
 
@@ -217,7 +229,8 @@ Content-Type: application/json
 
 ```json
 {
-  "error": "错误信息描述"
+  "code": "bad_request",
+  "message": "错误信息描述"
 }
 ```
 
@@ -227,11 +240,14 @@ Content-Type: application/json
 curl -X POST http://localhost:8080/api/v1/documents/content \
   -H "Content-Type: application/json" \
   -d '{
-    "filename": "test.docx",
-    "content": [
-      {"type": "heading", "text": "测试文档", "heading_level": 1},
-      {"type": "paragraph", "text": "这是一段测试内容。"}
-    ]
+    "cmd": "wordzero.GenerateFromContent",
+    "request": {
+      "filename": "test.docx",
+      "content": [
+        {"type": "heading", "text": "测试文档", "heading_level": 1},
+        {"type": "paragraph", "text": "这是一段测试内容。"}
+      ]
+    }
   }'
 ```
 
@@ -245,6 +261,13 @@ Content-Type: application/json
 ```
 
 **请求体：**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `cmd` | string | 是 | 命令标识：`wordzero.GenerateFromTemplate` |
+| `request` | object | 是 | 请求内容 |
+
+**`request` 字段：**
 
 | 字段 | 类型 | 必填 | 说明 |
 |------|------|------|------|
@@ -264,17 +287,20 @@ Content-Type: application/json
 
 ```json
 {
-  "filename": "contract.docx",
-  "template_url": "https://example.com/templates/contract.docx",
-  "variables": {
-    "company_name": "示例科技有限公司",
-    "date": "2024-01-01",
-    "amount": "100,000",
-    "is_vip": true,
-    "items": [
-      {"name": "产品A", "price": "1000"},
-      {"name": "产品B", "price": "2000"}
-    ]
+  "cmd": "wordzero.GenerateFromTemplate",
+  "request": {
+    "filename": "contract.docx",
+    "template_url": "https://example.com/templates/contract.docx",
+    "variables": {
+      "company_name": "示例科技有限公司",
+      "date": "2024-01-01",
+      "amount": "100,000",
+      "is_vip": true,
+      "items": [
+        {"name": "产品A", "price": "1000"},
+        {"name": "产品B", "price": "2000"}
+      ]
+    }
   }
 }
 ```
@@ -283,9 +309,11 @@ Content-Type: application/json
 
 ```json
 {
-  "url": "http://localhost:9000/wordzero/documents/2024-01-01/1704067200000_contract.docx",
-  "filename": "contract.docx",
-  "size": 8192
+  "response": {
+    "url": "http://localhost:9000/wordzero/documents/2024-01-01/1704067200000_contract.docx",
+    "filename": "contract.docx",
+    "size": 8192
+  }
 }
 ```
 
@@ -295,11 +323,14 @@ Content-Type: application/json
 curl -X POST http://localhost:8080/api/v1/documents/template \
   -H "Content-Type: application/json" \
   -d '{
-    "filename": "output.docx",
-    "template_url": "https://example.com/templates/my_template.docx",
-    "variables": {
-      "title": "我的文档",
-      "author": "张三"
+    "cmd": "wordzero.GenerateFromTemplate",
+    "request": {
+      "filename": "output.docx",
+      "template_url": "https://example.com/templates/my_template.docx",
+      "variables": {
+        "title": "我的文档",
+        "author": "张三"
+      }
     }
   }'
 ```
@@ -589,22 +620,25 @@ WordZero 模板支持以下语法：
 
 ```json
 {
-  "filename": "user_manual.docx",
-  "content": [
-    {"type": "heading", "text": "用户手册", "heading_level": 1},
-    {"type": "paragraph", "text": "本文档介绍产品使用方法"},
-    {"type": "heading", "text": "第一章：快速开始", "heading_level": 2},
-    {"type": "heading", "text": "1.1 安装", "heading_level": 3},
-    {"type": "paragraph", "text": "请按照以下步骤安装..."},
-    {"type": "heading", "text": "1.2 配置", "heading_level": 3},
-    {"type": "paragraph", "text": "首次启动后需要配置..."},
-    {"type": "heading", "text": "第二章：高级功能", "heading_level": 2},
-    {"type": "heading", "text": "2.1 自定义设置", "heading_level": 3},
-    {"type": "paragraph", "text": "高级用户可以自定义..."},
-    {"type": "page_break"},
-    {"type": "heading", "text": "附录", "heading_level": 1},
-    {"type": "paragraph", "text": "常见问题解答..."}
-  ]
+  "cmd": "wordzero.GenerateFromContent",
+  "request": {
+    "filename": "user_manual.docx",
+    "content": [
+      {"type": "heading", "text": "用户手册", "heading_level": 1},
+      {"type": "paragraph", "text": "本文档介绍产品使用方法"},
+      {"type": "heading", "text": "第一章：快速开始", "heading_level": 2},
+      {"type": "heading", "text": "1.1 安装", "heading_level": 3},
+      {"type": "paragraph", "text": "请按照以下步骤安装..."},
+      {"type": "heading", "text": "1.2 配置", "heading_level": 3},
+      {"type": "paragraph", "text": "首次启动后需要配置..."},
+      {"type": "heading", "text": "第二章：高级功能", "heading_level": 2},
+      {"type": "heading", "text": "2.1 自定义设置", "heading_level": 3},
+      {"type": "paragraph", "text": "高级用户可以自定义..."},
+      {"type": "page_break"},
+      {"type": "heading", "text": "附录", "heading_level": 1},
+      {"type": "paragraph", "text": "常见问题解答..."}
+    ]
+  }
 }
 ```
 
@@ -612,25 +646,28 @@ WordZero 模板支持以下语法：
 
 ```json
 {
-  "filename": "sales_report.docx",
-  "content": [
-    {"type": "heading", "text": "2024年销售报告", "heading_level": 1},
-    {"type": "paragraph", "text": "本报告展示本年度销售数据汇总。"},
-    {"type": "heading", "text": "一季度销售数据", "heading_level": 2},
-    {
-      "type": "table",
-      "table_width": 9000,
-      "table_data": [
-        ["产品类别", "销售额（元）", "占比"],
-        ["电子产品", "5,250,000", "35%"],
-        ["办公设备", "3,150,000", "21%"],
-        ["家居用品", "2,100,000", "14%"],
-        ["其他", "4,500,000", "30%"]
-      ]
-    },
-    {"type": "heading", "text": "结论", "heading_level": 2},
-    {"type": "paragraph", "text": "电子产品销售额占比最高，是公司主要收入来源。", "bold": true}
-  ]
+  "cmd": "wordzero.GenerateFromContent",
+  "request": {
+    "filename": "sales_report.docx",
+    "content": [
+      {"type": "heading", "text": "2024年销售报告", "heading_level": 1},
+      {"type": "paragraph", "text": "本报告展示本年度销售数据汇总。"},
+      {"type": "heading", "text": "一季度销售数据", "heading_level": 2},
+      {
+        "type": "table",
+        "table_width": 9000,
+        "table_data": [
+          ["产品类别", "销售额（元）", "占比"],
+          ["电子产品", "5,250,000", "35%"],
+          ["办公设备", "3,150,000", "21%"],
+          ["家居用品", "2,100,000", "14%"],
+          ["其他", "4,500,000", "30%"]
+        ]
+      },
+      {"type": "heading", "text": "结论", "heading_level": 2},
+      {"type": "paragraph", "text": "电子产品销售额占比最高，是公司主要收入来源。", "bold": true}
+    ]
+  }
 }
 ```
 
@@ -638,17 +675,20 @@ WordZero 模板支持以下语法：
 
 ```json
 {
-  "filename": "notice.docx",
-  "content": [
-    {"type": "heading", "text": "重要通知", "heading_level": 1},
-    {"type": "paragraph", "text": "尊敬的用户：", "alignment": "left"},
-    {"type": "paragraph", "text": "    感谢您使用我们的服务。本通知旨在告知您关于系统维护的最新安排。", "alignment": "both"},
-    {"type": "paragraph", "text": "维护时间：2024年1月15日 00:00 - 06:00", "bold": true},
-    {"type": "paragraph", "text": "如有疑问，请联系客服。", "italic": true, "alignment": "right"},
-    {"type": "paragraph", "text": "--------------------------", "alignment": "center"},
-    {"type": "paragraph", "text": "此致", "alignment": "right"},
-    {"type": "paragraph", "text": "敬礼", "alignment": "right"}
-  ]
+  "cmd": "wordzero.GenerateFromContent",
+  "request": {
+    "filename": "notice.docx",
+    "content": [
+      {"type": "heading", "text": "重要通知", "heading_level": 1},
+      {"type": "paragraph", "text": "尊敬的用户：", "alignment": "left"},
+      {"type": "paragraph", "text": "    感谢您使用我们的服务。本通知旨在告知您关于系统维护的最新安排。", "alignment": "both"},
+      {"type": "paragraph", "text": "维护时间：2024年1月15日 00:00 - 06:00", "bold": true},
+      {"type": "paragraph", "text": "如有疑问，请联系客服。", "italic": true, "alignment": "right"},
+      {"type": "paragraph", "text": "--------------------------", "alignment": "center"},
+      {"type": "paragraph", "text": "此致", "alignment": "right"},
+      {"type": "paragraph", "text": "敬礼", "alignment": "right"}
+    ]
+  }
 }
 ```
 
@@ -658,15 +698,18 @@ WordZero 模板支持以下语法：
 
 ```json
 {
-  "filename": "contract.docx",
-  "template_url": "https://example.com/templates/vip_contract.docx",
-  "variables": {
-    "customer_name": "张三",
-    "contract_type": "VIP服务协议",
-    "is_vip": true,
-    "discount": "8折",
-    "service_level": "专属客服",
-    "validity_period": "24个月"
+  "cmd": "wordzero.GenerateFromTemplate",
+  "request": {
+    "filename": "contract.docx",
+    "template_url": "https://example.com/templates/vip_contract.docx",
+    "variables": {
+      "customer_name": "张三",
+      "contract_type": "VIP服务协议",
+      "is_vip": true,
+      "discount": "8折",
+      "service_level": "专属客服",
+      "validity_period": "24个月"
+    }
   }
 }
 ```
@@ -696,16 +739,19 @@ VIP客户专享：
 
 ```json
 {
-  "filename": "product_list.docx",
-  "template_url": "https://example.com/templates/product_list.docx",
-  "variables": {
-    "title": "产品目录",
-    "category": "电子产品",
-    "products": [
-      {"name": "手机X1", "price": "3999", "stock": 100},
-      {"name": "平板Pro", "price": "4999", "stock": 50},
-      {"name": "无线耳机", "price": "899", "stock": 200}
-    ]
+  "cmd": "wordzero.GenerateFromTemplate",
+  "request": {
+    "filename": "product_list.docx",
+    "template_url": "https://example.com/templates/product_list.docx",
+    "variables": {
+      "title": "产品目录",
+      "category": "电子产品",
+      "products": [
+        {"name": "手机X1", "price": "3999", "stock": 100},
+        {"name": "平板Pro", "price": "4999", "stock": 50},
+        {"name": "无线耳机", "price": "899", "stock": 200}
+      ]
+    }
   }
 }
 ```
@@ -729,14 +775,16 @@ VIP客户专享：
 
 ```json
 {
-  "filename": "org_chart.docx",
-  "template_url": "https://example.com/templates/org_chart.docx",
-  "variables": {
-    "company_name": "示例科技",
-    "departments": [
-      {
-        "name": "技术部",
-        "manager": "李经理",
+  "cmd": "wordzero.GenerateFromTemplate",
+  "request": {
+    "filename": "org_chart.docx",
+    "template_url": "https://example.com/templates/org_chart.docx",
+    "variables": {
+      "company_name": "示例科技",
+      "departments": [
+        {
+          "name": "技术部",
+          "manager": "李经理",
         "employees": [
           {"name": "张三", "role": "高级工程师"},
           {"name": "李四", "role": "工程师"}
@@ -751,6 +799,7 @@ VIP客户专享：
         ]
       }
     ]
+    }
   }
 }
 ```
@@ -777,21 +826,24 @@ VIP客户专享：
 
 ```json
 {
-  "filename": "contract_20240101.docx",
-  "template_url": "https://example.com/templates/contract.docx",
-  "variables": {
-    "contract_no": "CT-2024-001",
-    "party_a": "甲方科技有限公司",
-    "party_b": "乙方企业有限公司",
-    "sign_date": "2024年1月1日",
-    "amount": "人民币壹佰万元整",
-    "payment_method": "按季度支付",
-    "is_long_term": true,
-    "items": [
-      {"name": "软件开发服务", "price": "500000"},
-      {"name": "技术支持服务", "price": "300000"},
-      {"name": "培训服务", "price": "200000"}
-    ]
+  "cmd": "wordzero.GenerateFromTemplate",
+  "request": {
+    "filename": "contract_20240101.docx",
+    "template_url": "https://example.com/templates/contract.docx",
+    "variables": {
+      "contract_no": "CT-2024-001",
+      "party_a": "甲方科技有限公司",
+      "party_b": "乙方企业有限公司",
+      "sign_date": "2024年1月1日",
+      "amount": "人民币壹佰万元整",
+      "payment_method": "按季度支付",
+      "is_long_term": true,
+      "items": [
+        {"name": "软件开发服务", "price": "500000"},
+        {"name": "技术支持服务", "price": "300000"},
+        {"name": "培训服务", "price": "200000"}
+      ]
+    }
   }
 }
 ```
@@ -800,21 +852,24 @@ VIP客户专享：
 
 ```json
 {
-  "filename": "monthly_report.docx",
-  "template_url": "https://example.com/templates/monthly_report.docx",
-  "variables": {
-    "report_title": "2024年1月月度报告",
-    "department": "销售部",
-    "author": "张三",
-    "total_sales": "1,850,000",
-    "growth_rate": "15%",
-    "new_customers": 45,
-    "is_completed": true,
-    "highlights": [
-      {"title": "华东区业绩突破", "content": "销售额同比增长30%"},
-      {"title": "新客户开拓", "content": "本月新增客户45家"},
-      {"title": "产品创新", "content": "推出2款新产品"}
-    ]
+  "cmd": "wordzero.GenerateFromTemplate",
+  "request": {
+    "filename": "monthly_report.docx",
+    "template_url": "https://example.com/templates/monthly_report.docx",
+    "variables": {
+      "report_title": "2024年1月月度报告",
+      "department": "销售部",
+      "author": "张三",
+      "total_sales": "1,850,000",
+      "growth_rate": "15%",
+      "new_customers": 45,
+      "is_completed": true,
+      "highlights": [
+        {"title": "华东区业绩突破", "content": "销售额同比增长30%"},
+        {"title": "新客户开拓", "content": "本月新增客户45家"},
+        {"title": "产品创新", "content": "推出2款新产品"}
+      ]
+    }
   }
 }
 ```
@@ -827,15 +882,18 @@ VIP客户专享：
 curl -X POST http://localhost:8080/api/v1/documents/content \
   -H "Content-Type: application/json" \
   -d '{
-    "filename": "test.docx",
-    "content": [
-      {"type": "heading", "text": "测试文档", "heading_level": 1},
-      {"type": "paragraph", "text": "这是使用 curl 生成的 Word 文档。"},
-      {"type": "paragraph", "text": "支持多种格式：", "bold": true},
-      {"type": "paragraph", "text": "- 加粗文本", "bold": true},
-      {"type": "paragraph", "text": "- 斜体文本", "italic": true},
-      {"type": "paragraph", "text": "- 居中对齐", "alignment": "center"}
-    ]
+    "cmd": "wordzero.GenerateFromContent",
+    "request": {
+      "filename": "test.docx",
+      "content": [
+        {"type": "heading", "text": "测试文档", "heading_level": 1},
+        {"type": "paragraph", "text": "这是使用 curl 生成的 Word 文档。"},
+        {"type": "paragraph", "text": "支持多种格式：", "bold": true},
+        {"type": "paragraph", "text": "- 加粗文本", "bold": true},
+        {"type": "paragraph", "text": "- 斜体文本", "italic": true},
+        {"type": "paragraph", "text": "- 居中对齐", "alignment": "center"}
+      ]
+    }
   }'
 ```
 
@@ -845,12 +903,15 @@ curl -X POST http://localhost:8080/api/v1/documents/content \
 curl -X POST http://localhost:8080/api/v1/documents/template \
   -H "Content-Type: application/json" \
   -d '{
-    "filename": "template_test.docx",
-    "template_url": "https://example.com/templates/sample.docx",
-    "variables": {
-      "title": "测试文档",
-      "author": "张三",
-      "date": "2024-01-01"
+    "cmd": "wordzero.GenerateFromTemplate",
+    "request": {
+      "filename": "template_test.docx",
+      "template_url": "https://example.com/templates/sample.docx",
+      "variables": {
+        "title": "测试文档",
+        "author": "张三",
+        "date": "2024-01-01"
+      }
     }
   }'
 ```
@@ -863,11 +924,14 @@ for i in {1..5}; do
   curl -X POST http://localhost:8080/api/v1/documents/content \
     -H "Content-Type: application/json" \
     -d "{
-      \"filename\": \"batch_$i.docx\",
-      \"content\": [
-        {\"type\": \"heading\", \"text\": \"文档 $i\", \"heading_level\": 1},
-        {\"type\": \"paragraph\", \"text\": \"这是第 $i 个批量生成的文档。\"}
-      ]
+      \"cmd\": \"wordzero.GenerateFromContent\",
+      \"request\": {
+        \"filename\": \"batch_$i.docx\",
+        \"content\": [
+          {\"type\": \"heading\", \"text\": \"文档 $i\", \"heading_level\": 1},
+          {\"type\": \"paragraph\", \"text\": \"这是第 $i 个批量生成的文档。\"}
+        ]
+      }
     }"
 done
 ```
@@ -1149,7 +1213,7 @@ func batchGenerate(client *sdk.Client, tasks []GenerateTask) []GenerateResult {
 import (
     "fmt"
     "time"
-    "github.com/zerx-lab/wordZero/pkg/s3"
+    "github.com/zerx-lab/wordZero/pkg/s3storage"
 )
 
 // 自定义对象键生成器

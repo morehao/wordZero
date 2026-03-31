@@ -1,5 +1,5 @@
-// Package s3 提供S3协议兼容的对象存储上传功能，底层使用 github.com/ygpkg/yg-go/storage 实现
-package s3
+// Package s3storage 提供S3协议兼容的对象存储上传功能，底层使用 github.com/ygpkg/yg-go/storage 实现
+package s3storage
 
 import (
 	"bytes"
@@ -20,17 +20,14 @@ func init() {
 }
 
 type Uploader struct {
-	cfg   ygconfig.S3StorageConfig
-	once  sync.Once
-	fs    *ygstorage.S3Fs
-	fsErr error
+	cfg ygconfig.S3StorageConfig
+	fs  *ygstorage.S3Fs
 }
 
-var GlobalUploader *Uploader
-
-func SetGlobalUploader(uploader *Uploader) {
-	GlobalUploader = uploader
-}
+var (
+	GlobalUploader *Uploader
+	uploaderOnce   sync.Once
+)
 
 func InitGlobalUploader(cfg ygconfig.S3StorageConfig) error {
 	if cfg.Bucket == "" {
@@ -43,9 +40,21 @@ func InitGlobalUploader(cfg ygconfig.S3StorageConfig) error {
 		logs.Errorf("[s3] init S3 uploader failed: %s", err)
 		return err
 	}
-	SetGlobalUploader(uploader)
+
+	GlobalUploader = uploader
 	logs.Infof("[s3] S3 uploader initialized, bucket: %s", cfg.Bucket)
 	return nil
+}
+
+func GetGlobalUploader(cfg ygconfig.S3StorageConfig) (*Uploader, error) {
+	var initErr error
+	uploaderOnce.Do(func() {
+		initErr = InitGlobalUploader(cfg)
+	})
+	if initErr != nil {
+		return nil, initErr
+	}
+	return GlobalUploader, nil
 }
 
 func NewUploader(cfg ygconfig.S3StorageConfig) (*Uploader, error) {
@@ -56,22 +65,19 @@ func NewUploader(cfg ygconfig.S3StorageConfig) (*Uploader, error) {
 		cfg.Region = "us-east-1"
 	}
 
-	return &Uploader{cfg: cfg}, nil
-}
+	uploader := &Uploader{cfg: cfg}
 
-func (u *Uploader) init() error {
-	u.once.Do(func() {
-		opt := ygconfig.StorageOption{}
-		u.fs, u.fsErr = ygstorage.NewS3Fs(u.cfg, opt)
-	})
-	return u.fsErr
+	opt := ygconfig.StorageOption{}
+	fs, err := ygstorage.NewS3Fs(cfg, opt)
+	if err != nil {
+		return nil, fmt.Errorf("init S3 fs failed: %w", err)
+	}
+	uploader.fs = fs
+
+	return uploader, nil
 }
 
 func (u *Uploader) Upload(ctx context.Context, key string, data []byte, contentType string) (string, error) {
-	if err := u.init(); err != nil {
-		return "", fmt.Errorf("初始化S3连接失败: %w", err)
-	}
-
 	ext := filepath.Ext(key)
 
 	fi := &ygstorage.FileInfo{

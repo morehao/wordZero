@@ -1,16 +1,16 @@
-// Package s3_test 提供S3包的单元测试
-package s3_test
+// Package s3storage_test 提供S3storage包的单元测试
+package s3storage_test
 
 import (
 	"strings"
 	"testing"
 
 	ygconfig "github.com/ygpkg/yg-go/config"
-	"github.com/zerx-lab/wordZero/pkg/s3"
+	"github.com/zerx-lab/wordZero/pkg/s3storage"
 )
 
 func TestGenerateObjectKey(t *testing.T) {
-	key := s3.GenerateObjectKey("test.docx")
+	key := s3storage.GenerateObjectKey("test.docx")
 	if key == "" {
 		t.Fatal("生成的对象键不能为空")
 	}
@@ -23,7 +23,7 @@ func TestGenerateObjectKey(t *testing.T) {
 }
 
 func TestGenerateObjectKeyEmpty(t *testing.T) {
-	key := s3.GenerateObjectKey("")
+	key := s3storage.GenerateObjectKey("")
 	if key == "" {
 		t.Fatal("生成的对象键不能为空")
 	}
@@ -40,7 +40,7 @@ func TestNewUploaderValidation(t *testing.T) {
 			AccessKeyID:     "test",
 			SecretAccessKey: "test",
 		}
-		_, err := s3.NewUploader(cfg)
+		_, err := s3storage.NewUploader(cfg)
 		if err == nil {
 			t.Fatal("期望空存储桶导致错误，但成功创建了上传器")
 		}
@@ -55,7 +55,7 @@ func TestNewUploaderValidation(t *testing.T) {
 			SecretAccessKey: "test-secret",
 			UsePathStyle:    true,
 		}
-		uploader, err := s3.NewUploader(cfg)
+		uploader, err := s3storage.NewUploader(cfg)
 		if err != nil {
 			t.Fatalf("期望成功创建上传器，但失败: %v", err)
 		}

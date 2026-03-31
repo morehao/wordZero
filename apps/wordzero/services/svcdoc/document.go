@@ -11,7 +11,7 @@ import (
 	"github.com/zerx-lab/wordZero/apps/wordzero/internal/dto/docdto"
 	"github.com/zerx-lab/wordZero/pkg/document"
 	"github.com/zerx-lab/wordZero/pkg/generator"
-	"github.com/zerx-lab/wordZero/pkg/s3"
+	"github.com/zerx-lab/wordZero/pkg/s3storage"
 )
 
 func GenerateFromContent(ctx *gin.Context, req *docdto.GenerateFromContentRequest) (res *docdto.GenerateFromContentResponse, err error) {
@@ -35,8 +35,8 @@ func GenerateFromContent(ctx *gin.Context, req *docdto.GenerateFromContentReques
 		filename = "document.docx"
 	}
 
-	key := s3.GenerateObjectKey(filename)
-	url, err := s3.GlobalUploader.Upload(ctx.Request.Context(), key, docBytes,
+	key := s3storage.GenerateObjectKey(filename)
+	url, err := s3storage.GlobalUploader.Upload(ctx.Request.Context(), key, docBytes,
 		"application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 	if err != nil {
 		return nil, fmt.Errorf("上传文档失败: %w", err)
@@ -72,8 +72,8 @@ func GenerateFromTemplate(ctx *gin.Context, req *docdto.GenerateFromTemplateRequ
 		filename = "document.docx"
 	}
 
-	key := s3.GenerateObjectKey(filename)
-	url, err := s3.GlobalUploader.Upload(ctx.Request.Context(), key, docBytes,
+	key := s3storage.GenerateObjectKey(filename)
+	url, err := s3storage.GlobalUploader.Upload(ctx.Request.Context(), key, docBytes,
 		"application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 	if err != nil {
 		return nil, fmt.Errorf("上传文档失败: %w", err)
