@@ -1,0 +1,47 @@
+main:
+  app: wordzero
+  env: dev
+  http_addr: :8080
+
+logger:
+  default:
+    - writer: console
+      level: debug
+    - writer: file
+      level: debug
+      filename: /data/owl.test/log/default.log
+      maxsize: 10
+      maxage: 15
+      maxbackups: 5
+      localtime: true
+      compress: true
+  gorm:
+    - writer: console
+      level: debug
+  access:
+    - writer: console
+      level: debug
+    - writer: file
+      level: debug
+      filename: /data/owl.test/log/access.log
+      maxsize: 10
+      maxage: 15
+      maxbackups: 5
+      localtime: true
+      compress: true
+
+wordzero:
+  host: 0.0.0.0
+  port: 8080
+  read_timeout_seconds: 30
+  write_timeout_seconds: 60
+  idle_timeout_seconds: 120
+  template_download_timeout_seconds: 30
+
+storage:
+  endpoint: xxx
+  region: cn-xian
+  bucket: xxx
+  access_key_id: xxx
+  secret_access_key: xxx
+  use_path_style: true

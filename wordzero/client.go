@@ -8,33 +8,28 @@ import (
 	"net/http"
 	"time"
 
+	ygconfig "github.com/ygpkg/yg-go/config"
 	"github.com/zerx-lab/wordZero/pkg/document"
 	"github.com/zerx-lab/wordZero/pkg/generator"
 	"github.com/zerx-lab/wordZero/pkg/s3"
 )
 
-// Client WordZero SDK客户端
 type Client struct {
 	s3Uploader *s3.Uploader
 	httpClient *http.Client
 }
 
-// Config SDK客户端配置
 type Config struct {
-	// S3Config S3存储配置
-	S3Config s3.Config `json:"s3" yaml:"s3"`
-	// HTTPTimeout HTTP请求超时时间（用于下载模板），默认30秒
-	HTTPTimeout time.Duration `json:"http_timeout" yaml:"http_timeout"`
+	S3Config    ygconfig.S3StorageConfig `json:"s3" yaml:"s3"`
+	HTTPTimeout time.Duration            `json:"http_timeout" yaml:"http_timeout"`
 }
 
-// NewClient 创建新的SDK客户端
 func NewClient(cfg *Config) (*Client, error) {
 	if cfg == nil {
 		return nil, fmt.Errorf("SDK配置不能为空")
 	}
 
-	// 创建S3上传器
-	uploader, err := s3.NewUploader(&cfg.S3Config)
+	uploader, err := s3.NewUploader(cfg.S3Config)
 	if err != nil {
 		return nil, fmt.Errorf("创建S3上传器失败: %w", err)
 	}

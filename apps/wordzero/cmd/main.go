@@ -4,31 +4,35 @@ import (
 	"net"
 	"time"
 
-	wordzero "github.com/zerx-lab/wordZero/apps/wordzero"
-	"github.com/zerx-lab/wordZero/apps/wordzero/internal/config"
+	"github.com/zerx-lab/wordZero/apps/wordzero"
 	"github.com/zerx-lab/wordZero/pkg/global"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
 	"github.com/ygpkg/yg-go/apis/runtime/server"
+	"github.com/ygpkg/yg-go/config"
+	ygconfig "github.com/ygpkg/yg-go/config"
 	"github.com/ygpkg/yg-go/lifecycle"
 	"github.com/ygpkg/yg-go/logs"
 )
 
 var (
 	configFile string
-	rootCmd    = &cobra.Command{
-		Use: "wordzero",
+
+	rootCmd = &cobra.Command{
+		Use: "demo",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			cfg, err := config.LoadConfig(configFile)
+			cfg, err := ygconfig.LoadCoreConfig(configFile)
 			if err != nil {
-				logs.Warnf("[main] load config failed: %s", err)
+				logs.Warnf("[main] load config failed, %s", err)
 			}
 			if cfg == nil {
-				logs.Warnf("[main] use default config")
+				logs.Warnf("[main] use default config.")
+				cfg = &ygconfig.DefaultConfig
 			}
+
 			logs.ReloadConfig(cfg.MainConf.App, cfg.LogsConf)
-			logs.Debugf("[main] config loaded, env: %s", cfg.MainConf.Env)
+			logs.Debugf("[main] config: %+v\n", cfg)
 		},
 	}
 )
@@ -44,8 +48,8 @@ func mainRun() func(cmd *cobra.Command, args []string) {
 		cfg := config.Conf()
 		defer time.Sleep(time.Second)
 
-		if err := initS3Uploader(cfg); err != nil {
-			logs.Errorf("[main] init S3 failed: %s", err)
+		if err := initS3Uploader(); err != nil {
+			logs.Fatalf("[main] init S3 uploader failed: %s", err)
 			return
 		}
 
