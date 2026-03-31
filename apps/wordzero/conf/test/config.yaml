@@ -39,7 +39,7 @@ wordzero:
   template_download_timeout_seconds: 30
 
 storage:
-  endpoint: xxx
+  end_point: xxx
   region: cn-xian
   bucket: xxx
   access_key_id: xxx
