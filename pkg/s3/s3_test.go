@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zerx-lab/wordZero/internal/s3"
+	"github.com/zerx-lab/wordZero/pkg/s3"
 )
 
 // TestGenerateObjectKey 测试对象键生成

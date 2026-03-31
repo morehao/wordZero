@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/zerx-lab/wordZero/pkg/markdown"
@@ -10,7 +9,7 @@ import (
 
 // 数学公式转换示例
 // 演示如何将包含LaTeX数学公式的Markdown转换为Word文档
-func main() {
+func runMathFormulaDemo() error {
 	// 包含数学公式的Markdown内容
 	markdownContent := `# 数学公式示例
 
@@ -115,19 +114,19 @@ $$a^2 + b^2 = c^2$$
 	// 转换为Word文档
 	doc, err := converter.ConvertString(markdownContent, opts)
 	if err != nil {
-		log.Fatalf("转换失败: %v", err)
+		return fmt.Errorf("数学公式示例转换失败: %w", err)
 	}
 
 	// 确保输出目录存在
 	outputDir := "../output"
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
-		log.Fatalf("创建输出目录失败: %v", err)
+		return fmt.Errorf("数学公式示例创建输出目录失败: %w", err)
 	}
 
 	// 保存文档
 	outputPath := outputDir + "/math_formula_demo.docx"
 	if err := doc.Save(outputPath); err != nil {
-		log.Fatalf("保存文档失败: %v", err)
+		return fmt.Errorf("数学公式示例保存文档失败: %w", err)
 	}
 
 	fmt.Printf("数学公式文档已生成: %s\n", outputPath)
@@ -139,4 +138,6 @@ $$a^2 + b^2 = c^2$$
 	fmt.Println("- 上下标: x^2, x_i, x^{n+1}, x_{i,j}")
 	fmt.Println("- 分数: \\frac{a}{b}")
 	fmt.Println("- 根号: \\sqrt{x}, \\sqrt[3]{x}")
+
+	return nil
 }

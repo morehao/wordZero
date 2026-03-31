@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"os"
 
 	"github.com/zerx-lab/wordZero/pkg/markdown"
 )
 
-func main() {
+func runSoftLinebreakDemo() error {
 	// 演示软换行处理的修复
 	// 问题：单个\n（软换行）之前会导致文本连接在一起，没有空格
 	// 修复：现在单个\n会被正确渲染为空格
@@ -90,14 +90,19 @@ func main() {
 	// 转换为Word文档
 	doc, err := converter.ConvertString(markdownContent, opts)
 	if err != nil {
-		log.Fatalf("❌ 转换失败: %v", err)
+		return fmt.Errorf("软换行示例转换失败: %w", err)
+	}
+
+	outputDir := "../output"
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		return fmt.Errorf("软换行示例创建输出目录失败: %w", err)
 	}
 
 	// 保存文档
-	outputPath := "examples/output/soft_linebreak_demo.docx"
+	outputPath := outputDir + "/soft_linebreak_demo.docx"
 	err = doc.Save(outputPath)
 	if err != nil {
-		log.Fatalf("❌ 保存文档失败: %v", err)
+		return fmt.Errorf("软换行示例保存文档失败: %w", err)
 	}
 
 	fmt.Printf("✅ 软换行演示文档已保存到: %s\n", outputPath)
@@ -111,4 +116,6 @@ func main() {
 	fmt.Println("   • 软换行（单个\\n）渲染为空格")
 	fmt.Println("   • 硬换行（双\\n\\n）渲染为段落分隔")
 	fmt.Println("   • 符合Markdown规范")
+
+	return nil
 }

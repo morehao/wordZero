@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"os"
 
 	"github.com/zerx-lab/wordZero/pkg/markdown"
 )
 
-func main() {
+func runTableAndTasklistDemo() error {
 	// 全面的Markdown内容示例，涵盖所有支持的功能
 	markdownContent := `# WordZero Markdown 功能演示文档
 
@@ -275,14 +275,19 @@ function convertMarkdown(content) {
 	// 转换为Word文档
 	doc, err := converter.ConvertString(markdownContent, opts)
 	if err != nil {
-		log.Fatalf("❌ 转换失败: %v", err)
+		return fmt.Errorf("表格与任务列表示例转换失败: %w", err)
+	}
+
+	outputDir := "../output"
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		return fmt.Errorf("表格与任务列表示例创建输出目录失败: %w", err)
 	}
 
 	// 保存文档
-	outputPath := "examples/output/comprehensive_markdown_demo.docx"
+	outputPath := outputDir + "/comprehensive_markdown_demo.docx"
 	err = doc.Save(outputPath)
 	if err != nil {
-		log.Fatalf("❌ 保存文档失败: %v", err)
+		return fmt.Errorf("表格与任务列表示例保存文档失败: %w", err)
 	}
 
 	fmt.Printf("✅ 全面Markdown功能演示已保存到: %s\n", outputPath)
@@ -307,4 +312,6 @@ function convertMarkdown(content) {
 	fmt.Printf("   • 目录最大级别: %d\n", opts.TOCMaxLevel)
 	fmt.Printf("   • 默认字体: %s\n", opts.DefaultFontFamily)
 	fmt.Printf("   • 默认字号: %.1f\n", opts.DefaultFontSize)
+
+	return nil
 }

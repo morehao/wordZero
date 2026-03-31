@@ -10,7 +10,8 @@ import (
 )
 
 func main() {
-	fmt.Println("=== 文档分页和段落删除功能演示 ===\n")
+	fmt.Println("=== 文档分页和段落删除功能演示 ===")
+	fmt.Println()
 
 	// 确保输出目录存在
 	err := os.MkdirAll("examples/output", 0755)
@@ -65,7 +66,8 @@ func demonstratePageBreaks() {
 
 	fmt.Printf("✓ 分页演示文档已保存: %s\n", filename)
 	fmt.Println("  - 文档包含3页内容")
-	fmt.Println("  - 使用分页符分隔不同章节\n")
+	fmt.Println("  - 使用分页符分隔不同章节")
+	fmt.Println()
 }
 
 // demonstrateParagraphDeletion 演示段落删除功能

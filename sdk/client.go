@@ -8,10 +8,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/zerx-lab/wordZero/internal/generator"
-	"github.com/zerx-lab/wordZero/internal/s3"
 	"github.com/zerx-lab/wordZero/pkg/document"
+	"github.com/zerx-lab/wordZero/pkg/generator"
+	"github.com/zerx-lab/wordZero/pkg/s3"
 )
+
 // Client WordZero SDK客户端
 type Client struct {
 	s3Uploader *s3.Uploader
