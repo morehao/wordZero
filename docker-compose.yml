@@ -3,12 +3,14 @@ version: "3.9"
 services:
   wordzero:
     build:
-      context: .
+      context: ./apps/wordzero/script
       dockerfile: Dockerfile
     image: wordzero-server:latest
     container_name: wordzero-server
     ports:
       - "8080:8080"
+    volumes:
+      - ./data/wordzero.prod:/data/wordzero.prod
     environment:
       # 服务配置
       - SERVER_HOST=0.0.0.0
@@ -26,6 +28,7 @@ services:
       minio:
         condition: service_healthy
     restart: unless-stopped
+    command: -c /data/wordzero.prod/conf/config.yaml
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s

@@ -1,8 +1,6 @@
-module github.com/zerx-lab/wordZero/validation
+module github.com/zerx-lab/wordZero/cmd/validation/main
 
-go 1.23
-
-toolchain go1.24.13
+go 1.23.0
 
 require github.com/zerx-lab/wordZero v0.0.0
 
@@ -11,4 +9,4 @@ require (
 	github.com/yuin/goldmark v1.7.8 // indirect
 )
 
-replace github.com/zerx-lab/wordZero => ../
+replace github.com/zerx-lab/wordZero => ../../../
