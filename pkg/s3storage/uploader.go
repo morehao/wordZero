@@ -16,6 +16,8 @@ import (
 )
 
 func init() {
+	// 注册 .docx 文件扩展名对应的 MIME 类型
+	// 默认为 application/octet-stream，Office Open XML 格式需使用专用 MIME 类型
 	_ = mime.AddExtensionType(".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 }
 
